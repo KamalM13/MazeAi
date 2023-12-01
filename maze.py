@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
+import maze as mz
 import random
 from queue import Queue
 
@@ -136,6 +137,7 @@ def animate_maze(maze, path=None):
 
 if __name__ == "__main__":
     #dim = int(input("Enter the dimension of the maze: "))
+    
     maze = create_maze(30)
     path = breadth_first_search(maze)
     animate_maze(maze, path)
