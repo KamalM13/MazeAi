@@ -2,7 +2,7 @@ from tkinter import messagebox, Tk
 import pygame
 import sys
 from algorithms import Algorithms
-
+from priority_queue import PriorityQueue
 
 class Box:
     def __init__(self, i, j):
@@ -112,7 +112,7 @@ class window:
         self.font = pygame.font.Font(None, 36)
         self.toolbar = Toolbar(0, 0, self.window_width, 50)
         self.algorithm_menu = AlgorithmMenu(
-            0, 0, self.window_width, 90, self.font, ["DFS", "BFS", "A*"]
+            0, 0, self.window_width, 90, self.font, ["DFS", "BFS", "Greedy"]
         )
 
     def generate_grid(self):
@@ -152,8 +152,9 @@ class window:
 
 
 def main():
-    game = window(900, 900)
+    game = window(700, 700)
     algorithm = Algorithms()
+    priority_queue = PriorityQueue()
     begin_search = False
     target_box_set = False
     target_box = None
@@ -178,8 +179,6 @@ def main():
                 if event.buttons[2] and not target_box_set:
                     i = x // game.box_width
                     j = y // game.box_height
-                    x_coor = i
-                    y_coor = j
                     target_box = game.grid[i][j]
                     target_box.target = True
                     target_box_set = True
@@ -194,11 +193,15 @@ def main():
                 searching = algorithm.depth_first_search(
                     game.queue, game.start_box, target_box, searching, paths
                 )
-                Tk().wm_withdraw()
-                messagebox.showinfo("Information", game.algorithm_menu.selected_algorithm)
+                # Tk().wm_withdraw()
+                # messagebox.showinfo("Information", game.algorithm_menu.selected_algorithm)
             elif game.algorithm_menu.selected_algorithm == "BFS":
                 searching = algorithm.breadth_first_search(
                     game.queue, game.start_box, target_box, searching, paths
+                )
+            elif game.algorithm_menu.selected_algorithm == "Greedy":
+                searching = algorithm.Greedy_search(
+                    game.queue, game.start_box,target_box, paths, priority_queue, searching
                 )
 
         game.window.fill((0, 0, 0))
