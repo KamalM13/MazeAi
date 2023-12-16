@@ -1,5 +1,47 @@
 from pyamaze import maze,agent
+from collections import deque
+import random as rand
 
+def bridth_first_search(maze,start = None):
+    if start is None:
+        start = (maze.rows,maze.cols)
+    visited = [start]
+    queue = deque([start])
+    directions = 'ESNW'
+    path = {}
+    search = []
+    while len(queue)>0:
+        currentCell = queue.popleft()
+        search.append(currentCell)
+        if currentCell == maze._goal:
+            break
+        pos = 0
+        for d in directions:
+            #maze_map returns a dict for all possible directions for the current cell
+            if maze.maze_map[currentCell][d] == True:
+                match d:
+                    case 'E':
+                        childCell = (currentCell[0],currentCell[1]+1)
+                    case 'W':
+                        childCell = (currentCell[0],currentCell[1]-1)
+                    case 'N':
+                        childCell = (currentCell[0]-1,currentCell[1])
+                    case 'S':
+                        childCell = (currentCell[0]+1,currentCell[1])
+                if childCell not in visited:
+                    pos += 1
+                    visited.append(childCell)
+                    queue.append(childCell)
+                    # we store the childcell as key in the dic because it doesn't repeat meaning we have to invert the dict to get the actual solution path
+                    path[childCell] = currentCell
+        if pos>1:
+            maze.markCells.append(currentCell)
+            actualPath = {}
+    cell = maze._goal
+    while cell != start:
+        actualPath[path[cell]] = cell
+        cell = path[cell]
+    return path,search,actualPath
 
 def depth_first_search(maze,start = None):
     if start is None:
@@ -15,7 +57,10 @@ def depth_first_search(maze,start = None):
         if currentCell == maze._goal:
             break
         pos = 0
-        for d in directions:
+        random = directions
+        while random:
+            d = rand.choice(random)
+            random = random.replace(d, "")
             #maze_map returns a dict for all possible directions for the current cell
             if maze.maze_map[currentCell][d] == True:
                 match d:
@@ -48,11 +93,11 @@ def depth_first_search(maze,start = None):
 def create_maze(dim):
     m = maze(dim, dim)
     m.CreateMaze()
-    depth_first_search(m)
+    bridth_first_search(m)
     return m
 
 def solve_maze(maze):
-    path,search,actualPath = depth_first_search(maze)
+    path,search,actualPath = bridth_first_search(maze)
     a = agent(maze,footprints=True,shape='square',color="green")
     b = agent(maze,1,1,goal = (maze.rows,maze.cols),footprints=True, filled=True,color="cyan")
     c = agent(maze,footprints=True, color="yellow")
