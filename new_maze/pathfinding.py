@@ -8,8 +8,8 @@ window_height = 700
 
 window = pygame.display.set_mode((window_width, window_height))
 
-columns = 50
-rows = 50
+columns = 25
+rows = 25
 
 box_width = window_width // columns
 box_height = window_height // rows
@@ -95,11 +95,12 @@ def main():
                     target_box.target = True
                     target_box_set = True
             # Start Algorithm
-            if event.type == pygame.KEYDOWN and target_box_set and searching:
-                #algorithm.Astar_search(grid,rows, columns, [x_coor,y_coor])
-                paths = algorithm.bridth_first_search(queue, start_box,target_box)
-                searching = False
+            if event.type == pygame.KEYDOWN and target_box_set:
                 begin_search = True
+            
+        if begin_search:
+            #algorithm.Astar_search(grid,rows, columns, [x_coor,y_coor])
+            searching = algorithm.depth_first_search(queue, start_box,target_box,searching,paths)
 
         window.fill((0, 0, 0))
 
