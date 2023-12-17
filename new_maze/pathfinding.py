@@ -4,6 +4,7 @@ import sys
 from algorithms import Algorithms
 from priority_queue import PriorityQueue
 
+
 class Box:
     def __init__(self, i, j):
         self.x = i
@@ -167,7 +168,14 @@ def main():
                 pygame.quit()
                 sys.exit()
             # Mouse Controls
-            elif event.type == pygame.MOUSEMOTION and begin_search == False:
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+                x = pygame.mouse.get_pos()[0]
+                y = pygame.mouse.get_pos()[1] - 95
+                i = x // game.box_width
+                j = y // game.box_height
+                target_box = game.grid[i][j]
+                target_box.target = True
+            elif (event.type == pygame.MOUSEMOTION) and begin_search == False:
                 x = pygame.mouse.get_pos()[0]
                 y = pygame.mouse.get_pos()[1] - 95
                 # Draw Wall
@@ -175,16 +183,9 @@ def main():
                     i = x // game.box_width
                     j = y // game.box_height
                     game.grid[i][j].wall = True
-                # Set Target
-                if event.buttons[2] and not target_box_set:
-                    i = x // game.box_width
-                    j = y // game.box_height
-                    target_box = game.grid[i][j]
-                    target_box.target = True
-                    target_box_set = True
             game.algorithm_menu.handle_event(event)
             # Start Algorithm
-            if event.type == pygame.KEYDOWN and target_box_set:
+            if event.type == pygame.KEYDOWN:
                 begin_search = True
 
         if begin_search:
@@ -201,9 +202,13 @@ def main():
                 )
             elif game.algorithm_menu.selected_algorithm == "Greedy":
                 searching = algorithm.Greedy_search(
-                    game.queue, game.start_box,target_box, paths, priority_queue, searching
+                    game.queue,
+                    game.start_box,
+                    target_box,
+                    paths,
+                    priority_queue,
+                    searching,
                 )
-
         game.window.fill((0, 0, 0))
 
         for i in range(game.columns):
