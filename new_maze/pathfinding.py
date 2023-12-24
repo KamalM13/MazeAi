@@ -3,6 +3,7 @@ import pygame
 import sys
 from algorithms import Algorithms
 from priority_queue import PriorityQueue
+import random
 
 
 class Box:
@@ -14,6 +15,7 @@ class Box:
         self.target = False
         self.queued = False
         self.visited = False
+        self.visitedMaze = False
         self.neighbours = []
         self.prior = None
         self.heuristic = None
@@ -86,13 +88,20 @@ class AlgorithmMenu:
                     row = i // 3
                     col = i % 3
                     text_rect = pygame.Rect(
-                        self.menu_rect.x + col * (self.menu_rect.width // 3),
+                        self.menu_rect.x + col * (self.menu_rect.width // 4),
                         self.menu_rect.y + row * 30,
-                        self.menu_rect.width // 4,
+                        self.menu_rect.width // 3,
                         30,
                     )
                     if text_rect.collidepoint(event.pos):
                         self.selected_algorithm = self.algorithms[i]
+                        # create a messagebox here
+                        Tk().wm_withdraw()
+                        messagebox.showinfo(
+                            "Info",
+                            "Please click on a start and end node and then press spacebar to start pathfinding!"
+                            + self.selected_algorithm,
+                        )
 
 
 class window:
@@ -101,13 +110,14 @@ class window:
         self.window_width = x
         self.window_height = y
         self.window = pygame.display.set_mode((self.window_width, self.window_height))
-        self.columns = 25
-        self.rows = 25
+        self.columns = 50
+        self.rows = 50
         self.box_width = self.window_width // self.columns
-        self.box_height = (self.window_height) // self.rows
+        self.box_height = (self.window_height - 95) // self.rows
         self.grid = self.generate_grid()
         self.set_neighbours(self.grid)
         self.start_box = self.init_start(self.grid[0][0])
+        self.generate_maze()
         self.queue = [self.start_box]
         self.toolbar = Toolbar(0, 0, self.window_width, 50)
         self.font = pygame.font.Font(None, 36)
@@ -124,6 +134,41 @@ class window:
                 arr.append(Box(i, j))
             grid.append(arr)
         return grid
+
+    def generate_maze(self):
+        # Set all cells as walls
+        for i in range(self.columns):
+            for j in range(self.rows):
+                self.grid[i][j].wall = True
+
+        stack = [(self.start_box.x, self.start_box.y)]
+
+        while len(stack) > 0:
+            x, y = stack[-1]
+            directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+            random.shuffle(directions)
+            found = False
+            for dx, dy in directions:
+                nx, ny = x + 2 * dx, y + 2 * dy
+
+                if (
+                    nx >= 0
+                    and ny >= 0
+                    and nx < self.columns
+                    and ny < self.rows
+                    and self.grid[nx][ny].wall == True
+                ):
+                    # Open a path
+                    self.grid[nx][ny].wall = False
+                    self.grid[x + dx][y + dy].wall = False
+
+                    # Move to the next cell
+                    stack.append((nx, ny))
+                    found = True
+                    break
+
+            if not found:
+                stack.pop()
 
     def set_neighbours(self, grid):
         for i in range(self.columns):
@@ -153,7 +198,7 @@ class window:
 
 
 def main():
-    game = window(700, 700)
+    game = window(900, 900)
     algorithm = Algorithms()
     priority_queue = PriorityQueue()
     begin_search = False
@@ -173,6 +218,8 @@ def main():
                 y = pygame.mouse.get_pos()[1] - 95
                 i = x // game.box_width
                 j = y // game.box_height
+                if game.grid[i][j].wall == True:
+                    game.grid[i][j].wall = False
                 target_box = game.grid[i][j]
                 target_box.target = True
             elif (event.type == pygame.MOUSEMOTION) and begin_search == False:
@@ -194,8 +241,6 @@ def main():
                 searching = algorithm.depth_first_search(
                     game.queue, game.start_box, target_box, searching, paths
                 )
-                # Tk().wm_withdraw()
-                # messagebox.showinfo("Information", game.algorithm_menu.selected_algorithm)
             elif game.algorithm_menu.selected_algorithm == "BFS":
                 searching = algorithm.breadth_first_search(
                     game.queue, game.start_box, target_box, searching, paths
