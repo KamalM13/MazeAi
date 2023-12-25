@@ -17,9 +17,9 @@ class MainMenu:
         screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Maze solver")
 
-        draw_img = pygame.image.load("new_maze/image/draw_maze.png").convert_alpha()
-        generate_img = pygame.image.load("new_maze/image/generate_maze.png").convert_alpha()
-        submit_img = pygame.image.load("new_maze/image/submit.png").convert_alpha() #will be updated after internet back :d
+        draw_img = pygame.image.load("image/draw_maze.png").convert_alpha()
+        generate_img = pygame.image.load("image/generate_maze.png").convert_alpha()
+        submit_img = pygame.image.load("image/submit.png").convert_alpha() #will be updated after internet back :d
 
         self.draw_button = button.Button(500, 350, draw_img, 1.6)
         self.generate_button = button.Button(50, 350, generate_img, 1.5)
@@ -66,7 +66,7 @@ class Box:
         self.heuristic = None
         self.width = width
         self.height = height
-        self.image=pygame.image.load("new_maze/image/block.jpg")
+        self.image=pygame.image.load("image/block.jpg")
         self.image = pygame.transform.scale(self.image, (self.width, self.height))
 
     def draw(self, win, color, game):
