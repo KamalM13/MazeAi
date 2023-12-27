@@ -17,9 +17,9 @@ class MainMenu:
         screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Maze solver")
 
-        draw_img = pygame.image.load("image/draw_maze.png").convert_alpha()
-        generate_img = pygame.image.load("image/generate_maze.png").convert_alpha()
-        submit_img = pygame.image.load("image/submit.png").convert_alpha() #will be updated after internet back :d
+        draw_img = pygame.image.load("new_maze/image/draw_maze.png").convert_alpha()
+        generate_img = pygame.image.load("new_maze/image/generate_maze.png").convert_alpha()
+        submit_img = pygame.image.load("new_maze/image/submit.png").convert_alpha() #will be updated after internet back :d
 
         self.draw_button = button.Button(500, 350, draw_img, 1.6)
         self.generate_button = button.Button(50, 350, generate_img, 1.5)
@@ -63,10 +63,10 @@ class Box:
         self.visitedMaze = False
         self.neighbours = []
         self.prior = None
-        self.heuristic = None
+        self.heuristic = PriorityQueue()
         self.width = width
         self.height = height
-        self.image=pygame.image.load("image/block.jpg")
+        self.image=pygame.image.load("new_maze/image/block.jpg")
         self.image = pygame.transform.scale(self.image, (self.width, self.height))
 
     def draw(self, win, color, game):
@@ -158,6 +158,7 @@ class AlgorithmMenu:
                     )
                     if text_rect.collidepoint(event.pos):
                         self.selected_algorithm = self.algorithms[i]
+                        #print(f"wierd{self.selected_algorithm}")
                         # create a messagebox here
                         Tk().wm_withdraw()
                         messagebox.showinfo(
@@ -166,9 +167,8 @@ class AlgorithmMenu:
                             + self.selected_algorithm,
                         )
 
-
 class window:
-    def __init__(self, x, y, columns=50, rows=50):
+    def __init__(self, x, y,columns=50, rows=50):
         self.window_width = x
         self.window_height = y
         self.window = pygame.display.set_mode((self.window_width, self.window_height))
@@ -178,8 +178,8 @@ class window:
         self.box_height = (self.window_height - 95) // self.rows
         self.grid = self.generate_grid()
         self.set_neighbours(self.grid)
-        self.start_box = self.init_start(self.grid[0][0])
-        self.queue = [self.start_box]
+        self.start_box = None # set the start 
+        self.queue = None
         self.toolbar = Toolbar(0, 0, self.window_width, 50)
         self.font = pygame.font.Font(None, 36)
         self.toolbar = Toolbar(0, 0, self.window_width, 50)
@@ -201,8 +201,10 @@ class window:
         for i in range(self.columns):
             for j in range(self.rows):
                 self.grid[i][j].wall = True
-
-        stack = [(self.start_box.x, self.start_box.y)]
+        if self.start_box:
+            stack = [(self.start_box.x, self.start_box.y)]
+        else:
+            stack = [(0,0)]
 
         while len(stack) > 0:
             x, y = stack[-1]
@@ -263,10 +265,11 @@ def draw_maze(game):
         priority_queue = PriorityQueue()
         paths = []
         begin_search = False
-        target_box_set = False
-        target_box = None
+        choosed = False
+        target_box = []
         searching = True
         stop = False
+        start_set = False
         while not(stop):
             for event in pygame.event.get():
                 # Quit Window
@@ -274,34 +277,59 @@ def draw_maze(game):
                     pygame.quit()
                     sys.exit()
                 # Mouse Controls
-                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3 and start_set and begin_search == False:
                     x = pygame.mouse.get_pos()[0]
                     y = pygame.mouse.get_pos()[1] - 95
                     i = x // game.box_width
                     j = y // game.box_height
                     if game.grid[i][j].wall == True:
                         game.grid[i][j].wall = False
-                    target_box = game.grid[i][j]
-                    target_box.target = True
-                elif (event.type == pygame.MOUSEMOTION) and begin_search == False:
+                    elif game.grid[i][j].target == True:
+                        for index,box in enumerate(target_box):
+                            if box.x == i and box.y == j:
+                                target_box.pop(index)
+                                game.grid[i][j].target = False
+                    elif not(game.grid[i][j].start):
+                        target_box.append(game.grid[i][j])
+                        length = len(target_box) - 1
+                        target_box[length].target = True
+                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3 and begin_search == False:#handle left click
+                    x = pygame.mouse.get_pos()[0]
+                    y = pygame.mouse.get_pos()[1] - 95
+                    i = x // game.box_width
+                    j = y // game.box_height
+                    if game.grid[i][j].wall == True:
+                        game.grid[i][j].wall = False
+                    elif game.grid[i][j].start == True:
+                        game.grid[i][j].start = False
+                        start_set = False
+                    elif not(start_set) and not(game.grid[i][j].target):
+                        game.start_box = game.init_start(game.grid[i][j])
+                        game.queue = [game.start_box]
+                        game.start_box.start = True
+                    start_set = True
+                elif (event.type == pygame.MOUSEMOTION) and begin_search == False and start_set:
                     x = pygame.mouse.get_pos()[0]
                     y = pygame.mouse.get_pos()[1] - 95
                     # Draw Wall
                     if event.buttons[0]:
                         i = x // game.box_width
                         j = y // game.box_height
-                        game.grid[i][j].wall = True
-                game.algorithm_menu.handle_event(event)
+                        if i < len(game.grid) and j < len(game.grid[0]) and not(game.grid[i][j].start):
+                            game.grid[i][j].wall = True
+                            #Reset the goal
+                            if game.grid[i][j].target:
+                                game.grid[i][j].target = False
+                if game.algorithm_menu.selected_algorithm == None:
+                    game.algorithm_menu.handle_event(event)
                 stop = game.toolbar.handle(event)
                 if stop:
                     stop = True
                     return "maze_input"
                 # Start Algorithm
-                if event.type == pygame.KEYDOWN:
-                    begin_search = True
-
+                if event.type == pygame.KEYDOWN and not(begin_search) and start_set and len(target_box) >= 1:
+                        begin_search = True
             if begin_search:
-                # algorithm.Astar_search(grid,rows, columns, [x_coor,y_coor])
                 if game.algorithm_menu.selected_algorithm == "DFS":
                     searching = algorithm.depth_first_search(
                         game.queue, game.start_box, target_box, searching, paths
@@ -378,8 +406,17 @@ def main():
                         else:
                             menu.columns_input.user_text += event.unicode
             if menu.submit_button.draw(screen):
-                menu_status = "menu"
-                game = window(800, 700,int(menu.columns_input.user_text),int(menu.rows_input.user_text))
+                try: 
+                    columns = int(menu.columns_input.user_text)
+                    rows = int(menu.rows_input.user_text)
+                except:
+                        messagebox.showinfo("Type error", "Only integers are allowed!")
+                else:
+                    if columns > 0 and rows > 0:
+                        menu_status = "menu"
+                        game = window(800, 700,columns,rows)
+                    else:
+                        messagebox.showinfo("Type error", "numbers should be bigger than zero!")
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.type == pygame.QUIT:
